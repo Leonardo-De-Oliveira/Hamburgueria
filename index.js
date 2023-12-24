@@ -2,15 +2,16 @@ const express = require('express')
 const app = express()
 app.use(express.json())
 const uuid = require('uuid')
+const API = require('./controller/API')
 
 const port = 3000
 const clients = []
 
-function updateStatus (clients, id) {
-    for(let i = 0; i < clients.length; i++) {
+function updateStatus(clients, id) {
+    for (let i = 0; i < clients.length; i++) {
         if (clients[i].id === id) {
             clients[i].status = 'Pronto'
-            
+
             return clients[i]
             break
         }
@@ -22,8 +23,8 @@ const checkCLientId = (req, res, next) => {
 
     const index = clients.findIndex(client => client.id === id)
 
-    if(index < 0){
-        return res.status(404).json({ error: 'Cliente não encontrado'})
+    if (index < 0) {
+        return res.status(404).json({ error: 'Cliente não encontrado' })
     }
 
     req.clientIndex = index
@@ -33,15 +34,38 @@ const checkCLientId = (req, res, next) => {
 }
 
 app.get('/order', (req, res) => {
-    return res.json(clients)
+    try {
+
+        if (clients.length > 0) {
+            let handlerApi = new API(200, "Todos os pedidos foram retornados com sucesso", clients)
+
+            return res.status(200).json({
+                data: handlerApi.response()
+            })
+        }else{
+            let handlerApi = new API(404, "Não há pedidos registrados", clients)
+
+            return res.status(404).json({
+                data: handlerApi.response()
+            })
+        }
+
+    } catch (err) {
+        console.log(err)
+    }
 })
 
 app.get('/order/:id', checkCLientId, (req, res) => {
+
     const index = req.clientIndex
 
     const client = clients[index]
 
-    return res.status(200).json(client)
+    let handlerApi = new API(200, "Todos os pedidos foram retornados com sucesso", client)
+
+    return res.status(200).json({
+        data: handlerApi.response()
+    })
 })
 
 app.put('/order/:id', checkCLientId, (req, res) => {
@@ -49,7 +73,7 @@ app.put('/order/:id', checkCLientId, (req, res) => {
     const index = req.clientIndex
     const { order, clientName, price, status } = req.body
 
-    const updateClient = { id, order, clientName, price, status}
+    const updateClient = { id, order, clientName, price, status }
 
     clients[index] = updateClient
 
